@@ -18,12 +18,12 @@ test_requires = crypto_requires + [
 
 
 setup(
-    name="channels_redis",
+    name="channels_valkey",
     version=__version__,
-    url="http://github.com/django/channels_redis/",
-    author="Django Software Foundation",
-    author_email="foundation@djangoproject.com",
-    description="Redis-backed ASGI channel layer implementation",
+    url="http://github.com/20252KNUCSECapstoneDesign1Class2Team5/channels_valkey/",
+    author="Yunseong Ha",
+    author_email="gci28267@gmail.com",
+    description="Valkey-backed ASGI channel layer implementation, Based on django/channel_redis",
     long_description=readme,
     license="BSD",
     zip_safe=False,
