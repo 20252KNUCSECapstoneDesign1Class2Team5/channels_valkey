@@ -150,7 +150,7 @@ class SerializersRegistry:
             )
         ), """
             `serializer_class` should be a class which implements `serialize` and `deserialize` method
-            or a subclass of `channels_redis.serializers.BaseMessageSerializer`
+            or a subclass of `channels_valkey.serializers.BaseMessageSerializer`
         """
 
         self._registry[format] = serializer_class
