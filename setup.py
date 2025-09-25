@@ -2,7 +2,7 @@ from os.path import dirname, join
 
 from setuptools import find_packages, setup
 
-from channels_redis import __version__
+from channels_valkey import __version__
 
 # We use the README as the long_description
 readme = open(join(dirname(__file__), "README.rst")).read()

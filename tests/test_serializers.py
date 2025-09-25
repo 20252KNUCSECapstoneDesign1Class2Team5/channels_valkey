@@ -1,6 +1,6 @@
 import pytest
 
-from channels_redis.serializers import (
+from channels_valkey.serializers import (
     JSONSerializer,
     MsgPackSerializer,
     SerializerDoesNotExist,
