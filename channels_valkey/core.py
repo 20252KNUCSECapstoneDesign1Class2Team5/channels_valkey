@@ -7,6 +7,7 @@ import time
 import uuid
 
 from valkey import asyncio as aiovalkey
+import valkey
 
 from channels.exceptions import ChannelFull
 from channels.layers import BaseChannelLayer
@@ -230,7 +231,15 @@ class ValkeyChannelLayer(BaseChannelLayer):
         # and the script executes atomically...
         await connection.eval(cleanup_script, 0, channel, backup_queue)
         # ...and it doesn't matter here either, the message will be safe in the backup.
-        result = await connection.bzpopmin(channel, timeout=timeout)
+        # result = await connection.bzpopmin(channel, timeout=timeout)
+
+        # I don't know why it's working, but without this I always encountered valkey.TimeoutError
+        # And I think below is ok because the only calling function (receive_single)
+        # will call this function again until it return non-None.
+        try:
+            result = await connection.bzpopmin(channel, timeout=timeout)
+        except valkey.TimeoutError:
+            result = None
 
         if result is not None:
             _, member, timestamp = result
