@@ -31,7 +31,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9",
     install_requires=[
-        "redis>=4.6",
+        "valkey",
         "msgpack~=1.0",
         "asgiref>=3.9.1,<4",
         "channels>=4.2.2",
