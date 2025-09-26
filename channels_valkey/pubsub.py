@@ -3,11 +3,11 @@ import functools
 import logging
 import uuid
 
-from redis import asyncio as aioredis
+from valkey import asyncio as aiovalkey
 
 from .serializers import registry
 from .utils import (
-    _close_redis,
+    _close_valkey,
     _consistent_hash,
     _wrap_close,
     create_pool,
@@ -24,7 +24,7 @@ async def _async_proxy(obj, name, *args, **kwargs):
     return await getattr(layer, name)(*args, **kwargs)
 
 
-class RedisPubSubChannelLayer:
+class ValkeyPubSubChannelLayer:
     def __init__(
         self,
         *args,
@@ -73,7 +73,7 @@ class RedisPubSubChannelLayer:
         try:
             layer = self._layers[loop]
         except KeyError:
-            layer = RedisPubSubLoopLayer(
+            layer = ValkeyPubSubLoopLayer(
                 *self._args,
                 **self._kwargs,
                 channel_layer=self,
@@ -84,9 +84,9 @@ class RedisPubSubChannelLayer:
         return layer
 
 
-class RedisPubSubLoopLayer:
+class ValkeyPubSubLoopLayer:
     """
-    Channel Layer that uses Redis's pub/sub functionality.
+    Channel Layer that uses Valkey's pub/sub functionality.
     """
 
     def __init__(
@@ -112,9 +112,9 @@ class RedisPubSubLoopLayer:
         # This dict maps `group_name` to set of channel names who are subscribed to that group.
         self.groups = {}
 
-        # For each host, we create a `RedisSingleShardConnection` to manage the connection to that host.
+        # For each host, we create a `ValkeySingleShardConnection` to manage the connection to that host.
         self._shards = [
-            RedisSingleShardConnection(host, self) for host in decode_hosts(hosts)
+            ValkeySingleShardConnection(host, self) for host in decode_hosts(hosts)
         ]
 
     def _get_shard(self, channel_or_group_name):
@@ -258,25 +258,25 @@ class RedisPubSubLoopLayer:
             await shard.flush()
 
 
-class RedisSingleShardConnection:
+class ValkeySingleShardConnection:
     def __init__(self, host, channel_layer):
         self.host = host
         self.channel_layer = channel_layer
         self._subscribed_to = set()
         self._lock = asyncio.Lock()
-        self._redis = None
+        self._valkey = None
         self._pubsub = None
         self._receive_task = None
 
     async def publish(self, channel, message):
         async with self._lock:
-            self._ensure_redis()
-            await self._redis.publish(channel, message)
+            self._ensure_valkey()
+            await self._valkey.publish(channel, message)
 
     async def subscribe(self, channel):
         async with self._lock:
             if channel not in self._subscribed_to:
-                self._ensure_redis()
+                self._ensure_valkey()
                 self._ensure_receiver()
                 await self._pubsub.subscribe(channel)
                 self._subscribed_to.add(channel)
@@ -284,7 +284,7 @@ class RedisSingleShardConnection:
     async def unsubscribe(self, channel):
         async with self._lock:
             if channel in self._subscribed_to:
-                self._ensure_redis()
+                self._ensure_valkey()
                 self._ensure_receiver()
                 await self._pubsub.unsubscribe(channel)
                 self._subscribed_to.remove(channel)
@@ -298,12 +298,12 @@ class RedisSingleShardConnection:
                 except asyncio.CancelledError:
                     pass
                 self._receive_task = None
-            if self._redis is not None:
+            if self._valkey is not None:
                 # The pool was created just for this client, so make sure it is closed,
                 # otherwise it will schedule the connection to be closed inside the
                 # __del__ method, which doesn't have a loop running anymore.
-                await _close_redis(self._redis)
-                self._redis = None
+                await _close_valkey(self._valkey)
+                self._valkey = None
                 self._pubsub = None
             self._subscribed_to = set()
 
@@ -340,11 +340,11 @@ class RedisSingleShardConnection:
                     if channel_name in self.channel_layer.channels:
                         self.channel_layer.channels[channel_name].put_nowait(data)
 
-    def _ensure_redis(self):
-        if self._redis is None:
+    def _ensure_valkey(self):
+        if self._valkey is None:
             pool = create_pool(self.host)
-            self._redis = aioredis.Redis(connection_pool=pool)
-            self._pubsub = self._redis.pubsub()
+            self._valkey = aiovalkey.Valkey(connection_pool=pool)
+            self._pubsub = self._valkey.pubsub()
 
     def _ensure_receiver(self):
         if self._receive_task is None:

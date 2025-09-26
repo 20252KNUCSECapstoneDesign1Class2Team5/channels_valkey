@@ -2,7 +2,7 @@ from os.path import dirname, join
 
 from setuptools import find_packages, setup
 
-from channels_redis import __version__
+from channels_valkey import __version__
 
 # We use the README as the long_description
 readme = open(join(dirname(__file__), "README.rst")).read()
@@ -18,12 +18,12 @@ test_requires = crypto_requires + [
 
 
 setup(
-    name="channels_redis",
+    name="channels_valkey",
     version=__version__,
-    url="http://github.com/django/channels_redis/",
-    author="Django Software Foundation",
-    author_email="foundation@djangoproject.com",
-    description="Redis-backed ASGI channel layer implementation",
+    url="http://github.com/20252KNUCSECapstoneDesign1Class2Team5/channels_valkey/",
+    author="Yunseong Ha",
+    author_email="gci28267@gmail.com",
+    description="Valkey-backed ASGI channel layer implementation, Based on django/channel_redis",
     long_description=readme,
     license="BSD",
     zip_safe=False,
@@ -31,7 +31,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9",
     install_requires=[
-        "redis>=4.6",
+        "valkey",
         "msgpack~=1.0",
         "asgiref>=3.9.1,<4",
         "channels>=4.2.2",
